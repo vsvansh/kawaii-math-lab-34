@@ -37,6 +37,35 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   const memoryValue = externalMemory !== undefined ? externalMemory : localMemory;
   const setMemoryValue = setExternalMemory || setLocalMemory;
   
+  // Function to get cursor position in the input
+  const getCursorPosition = (input: string): number => {
+    // Count open and close parentheses
+    const openParens = (input.match(/\(/g) || []).length;
+    const closeParens = (input.match(/\)/g) || []).length;
+    
+    // If there are more open parentheses than closed ones,
+    // position is after the last open parenthesis without a matching closing one
+    if (openParens > closeParens) {
+      let openCount = 0;
+      let closeCount = 0;
+      
+      for (let i = 0; i < input.length; i++) {
+        if (input[i] === '(') openCount++;
+        if (input[i] === ')') closeCount++;
+        
+        // When we find an open parenthesis without a matching close one
+        if (openCount > closeCount) {
+          // Find the position after this open parenthesis
+          const pos = input.indexOf('(', i - 1) + 1;
+          if (pos > 0) return pos;
+        }
+      }
+    }
+    
+    // Default to end of input
+    return input.length;
+  };
+  
   const handleButtonClick = (value: string) => {
     switch (value) {
       case '=':
@@ -144,8 +173,20 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       const operators = ['+', '-', '*', '/', '.'];
       const lastChar = prevInput.slice(-1);
       
+      // If operators are repeated, replace the last one
       if (operators.includes(value) && operators.includes(lastChar)) {
         return prevInput.slice(0, -1) + value;
+      }
+      
+      // Special handling for parentheses input
+      if (value === ')') {
+        // Only add closing parenthesis if there's an open one
+        const openCount = (prevInput.match(/\(/g) || []).length;
+        const closeCount = (prevInput.match(/\)/g) || []).length;
+        
+        if (openCount <= closeCount) {
+          return prevInput; // Don't add extra closing parentheses
+        }
       }
       
       const newInput = prevInput + value;
@@ -196,13 +237,44 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendTrigFunction = (func: string) => {
-    // Add the function name with opening parenthesis
-    setInput(prevInput => prevInput + `${func}(`);
+    setInput(prevInput => {
+      // Add function name with opening AND closing parenthesis and position cursor between them
+      return prevInput + `${func}()`;
+    });
+    
+    // After adding the function with parentheses, position the cursor between them
+    setTimeout(() => {
+      const element = document.activeElement as HTMLInputElement;
+      if (element && element.tagName === 'INPUT') {
+        // Try to set selection if it's an input element
+        try {
+          const position = element.value.lastIndexOf('()') + 1;
+          element.setSelectionRange(position, position);
+        } catch (e) {
+          // Ignore selection errors, not critical
+        }
+      }
+    }, 0);
   };
 
   const appendLogFunction = (func: string) => {
-    // Add the function name with opening parenthesis
-    setInput(prevInput => prevInput + `${func}(`);
+    setInput(prevInput => {
+      // Add function name with opening AND closing parenthesis
+      return prevInput + `${func}()`;
+    });
+    
+    // Same cursor positioning logic as trig functions
+    setTimeout(() => {
+      const element = document.activeElement as HTMLInputElement;
+      if (element && element.tagName === 'INPUT') {
+        try {
+          const position = element.value.lastIndexOf('()') + 1;
+          element.setSelectionRange(position, position);
+        } catch (e) {
+          // Ignore selection errors
+        }
+      }
+    }, 0);
   };
 
   const appendSquare = () => {
@@ -238,7 +310,22 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendSquareRoot = () => {
-    setInput(prevInput => prevInput + 'sqrt(');
+    setInput(prevInput => {
+      return prevInput + 'sqrt()';
+    });
+    
+    // Position cursor between parentheses
+    setTimeout(() => {
+      const element = document.activeElement as HTMLInputElement;
+      if (element && element.tagName === 'INPUT') {
+        try {
+          const position = element.value.lastIndexOf('()') + 1;
+          element.setSelectionRange(position, position);
+        } catch (e) {
+          // Ignore selection errors
+        }
+      }
+    }, 0);
   };
 
   const appendConstant = (constant: string) => {
@@ -273,7 +360,9 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
 
   const appendAbsoluteValue = () => {
     setInput(prevInput => {
-      if (!prevInput) return 'abs(';
+      if (!prevInput) {
+        return 'abs()';
+      }
       
       // Check if we need to wrap existing input or just start a new function
       const needsWrap = !prevInput.endsWith('(');
@@ -281,9 +370,22 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       if (needsWrap) {
         return `abs(${prevInput})`;
       } else {
-        return `${prevInput}abs(`;
+        return `${prevInput}abs()`;
       }
     });
+    
+    // Position cursor between parentheses if empty abs()
+    setTimeout(() => {
+      const element = document.activeElement as HTMLInputElement;
+      if (element && element.tagName === 'INPUT') {
+        try {
+          const position = element.value.lastIndexOf('()') + 1;
+          element.setSelectionRange(position, position);
+        } catch (e) {
+          // Ignore selection errors
+        }
+      }
+    }, 0);
   };
 
   const handleMemoryRecall = () => {

@@ -40,45 +40,67 @@ export function evaluateExpression(expression: string): string {
     processedExpr = processedExpr.replace(/\(([^)]+)\)\^(\d+|\()/g, 'Math.pow($1, $2)');
     processedExpr = processedExpr.replace(/(\d+|\))\^\(([^)]+)\)/g, 'Math.pow($1, $2)');
     
+    // Improved function handling for all types of functions
     // Handle square root, making sure any expression inside is evaluated
-    processedExpr = processedExpr.replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)');
+    processedExpr = processedExpr.replace(/sqrt\(([^)]*)\)/g, 'Math.sqrt($1)');
     
-    // Handle absolute value
-    processedExpr = processedExpr.replace(/abs\(([^)]+)\)/g, 'Math.abs($1)');
+    // Handle absolute value with any content inside
+    processedExpr = processedExpr.replace(/abs\(([^)]*)\)/g, 'Math.abs($1)');
     
-    // Better handling of trigonometric functions (convert to radians for standard Math functions)
-    // Sin - with much more robust pattern matching
-    processedExpr = processedExpr.replace(/sin\(([^)]+)\)/g, (match, angle) => {
+    // Improved handling of trigonometric functions (convert to radians for standard Math functions)
+    // Sin - with more robust pattern matching for any content inside parentheses
+    processedExpr = processedExpr.replace(/sin\(([^)]*)\)/g, (match, angle) => {
+      // Handle empty parentheses case
+      if (!angle.trim()) return match;
       return `Math.sin((${angle}) * Math.PI / 180)`;
     });
     
-    // Cos - with much more robust pattern matching
-    processedExpr = processedExpr.replace(/cos\(([^)]+)\)/g, (match, angle) => {
+    // Cos - with more robust pattern matching for any content inside parentheses
+    processedExpr = processedExpr.replace(/cos\(([^)]*)\)/g, (match, angle) => {
+      // Handle empty parentheses case
+      if (!angle.trim()) return match;
       return `Math.cos((${angle}) * Math.PI / 180)`;
     });
     
-    // Tan - with much more robust pattern matching
-    processedExpr = processedExpr.replace(/tan\(([^)]+)\)/g, (match, angle) => {
+    // Tan - with more robust pattern matching for any content inside parentheses
+    processedExpr = processedExpr.replace(/tan\(([^)]*)\)/g, (match, angle) => {
+      // Handle empty parentheses case
+      if (!angle.trim()) return match;
       return `Math.tan((${angle}) * Math.PI / 180)`;
     });
     
     // Handle inverse trigonometric functions (convert from radians to degrees)
-    // Fixed pattern for inverse trig functions
-    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]+)\)/g, (match, value) => {
+    // Fixed pattern for inverse trig functions with any content
+    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]*)\)/g, (match, value) => {
+      // Handle empty parentheses case
+      if (!value.trim()) return match;
       return `(Math.asin(${value}) * 180 / Math.PI)`;
     });
     
-    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]+)\)/g, (match, value) => {
+    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]*)\)/g, (match, value) => {
+      // Handle empty parentheses case
+      if (!value.trim()) return match;
       return `(Math.acos(${value}) * 180 / Math.PI)`;
     });
     
-    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]+)\)/g, (match, value) => {
+    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]*)\)/g, (match, value) => {
+      // Handle empty parentheses case
+      if (!value.trim()) return match;
       return `(Math.atan(${value}) * 180 / Math.PI)`;
     });
     
-    // Handle log functions with better pattern matching
-    processedExpr = processedExpr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
-    processedExpr = processedExpr.replace(/ln\(([^)]+)\)/g, 'Math.log($1)');
+    // Handle log functions with better pattern matching for any content
+    processedExpr = processedExpr.replace(/log\(([^)]*)\)/g, (match, value) => {
+      // Handle empty parentheses case
+      if (!value.trim()) return match;
+      return `Math.log10(${value})`;
+    });
+    
+    processedExpr = processedExpr.replace(/ln\(([^)]*)\)/g, (match, value) => {
+      // Handle empty parentheses case
+      if (!value.trim()) return match;
+      return `Math.log(${value})`;
+    });
     
     // Handle dangling parentheses - ensure they're balanced
     const openCount = (processedExpr.match(/\(/g) || []).length;
@@ -90,6 +112,20 @@ export function evaluateExpression(expression: string): string {
     
     // For debugging
     console.log("Processed expression:", processedExpr);
+    
+    // Detect and skip evaluation for incomplete expressions (e.g., empty function calls)
+    if (processedExpr.includes('Math.sin()') || 
+        processedExpr.includes('Math.cos()') || 
+        processedExpr.includes('Math.tan()') ||
+        processedExpr.includes('Math.asin()') || 
+        processedExpr.includes('Math.acos()') || 
+        processedExpr.includes('Math.atan()') ||
+        processedExpr.includes('Math.log10()') || 
+        processedExpr.includes('Math.log()') ||
+        processedExpr.includes('Math.sqrt()') ||
+        processedExpr.includes('Math.abs()')) {
+      return ""; // Return empty for preview instead of error
+    }
     
     // Improved safe evaluation using Function constructor with try/catch
     try {

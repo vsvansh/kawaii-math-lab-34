@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicCalculator from '@/components/BasicCalculator';
@@ -9,7 +10,7 @@ import SoundToggle from '@/components/SoundToggle';
 import KawaiiCharacter from '@/components/KawaiiCharacter';
 import { DecorativeBackground } from '@/components/DecorativeElements';
 import { motion } from 'framer-motion';
-import { initializeAudio } from '@/utils/soundUtils';
+import { initializeAudio, playModeChangeSound } from '@/utils/soundUtils';
 
 interface HistoryItem {
   input: string;
@@ -21,6 +22,7 @@ const Index = () => {
   const [input, setInput] = useState('');
   const [result, setResult] = useState('');
   const [calculatorMode, setCalculatorMode] = useState<'basic' | 'scientific' | 'converter'>('basic');
+  const [previousMode, setPreviousMode] = useState<'basic' | 'scientific' | 'converter'>('basic');
   const [showHistory, setShowHistory] = useState(false);
   const [kawaiiMood, setKawaiiMood] = useState<'happy' | 'curious' | 'sleepy' | 'excited'>('happy');
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -71,6 +73,17 @@ const Index = () => {
   // Toggle sound
   const toggleSound = () => {
     setIsSoundEnabled(prev => !prev);
+  };
+
+  // Handle mode change with sound
+  const handleModeChange = (mode: 'basic' | 'scientific' | 'converter') => {
+    setPreviousMode(calculatorMode);
+    setCalculatorMode(mode);
+    
+    // Play mode change sound if enabled and mode actually changed
+    if (isSoundEnabled && mode !== calculatorMode) {
+      playModeChangeSound(isSoundEnabled);
+    }
   };
 
   // Update kawaii character based on calculator activity
@@ -161,11 +174,11 @@ const Index = () => {
 
       // Toggle calculator modes with keyboard shortcuts
       if (event.altKey && key === '1') {
-        setCalculatorMode('basic');
+        handleModeChange('basic');
       } else if (event.altKey && key === '2') {
-        setCalculatorMode('scientific');
+        handleModeChange('scientific');
       } else if (event.altKey && key === '3') {
-        setCalculatorMode('converter');
+        handleModeChange('converter');
       }
 
       // Toggle theme and sound with keyboard shortcuts
@@ -216,21 +229,21 @@ const Index = () => {
               <TabsTrigger 
                 value="basic" 
                 className={`kawaii-tab w-1/3 ${calculatorMode === 'basic' ? 'active' : ''}`}
-                onClick={() => setCalculatorMode('basic')}
+                onClick={() => handleModeChange('basic')}
               >
                 🧮 Basic
               </TabsTrigger>
               <TabsTrigger 
                 value="scientific" 
                 className={`kawaii-tab w-1/3 ${calculatorMode === 'scientific' ? 'active' : ''}`}
-                onClick={() => setCalculatorMode('scientific')}
+                onClick={() => handleModeChange('scientific')}
               >
                 🧪 Scientific
               </TabsTrigger>
               <TabsTrigger 
                 value="converter" 
                 className={`kawaii-tab w-1/3 ${calculatorMode === 'converter' ? 'active' : ''}`}
-                onClick={() => setCalculatorMode('converter')}
+                onClick={() => handleModeChange('converter')}
               >
                 📐 Converter
               </TabsTrigger>
@@ -263,7 +276,10 @@ const Index = () => {
             </TabsContent>
             
             <TabsContent value="converter" className="mt-0">
-              <UnitConverter />
+              <UnitConverter 
+                isSoundEnabled={isSoundEnabled} 
+                addToHistory={addToHistory}
+              />
             </TabsContent>
           </Tabs>
         </motion.div>
@@ -285,7 +301,7 @@ const Index = () => {
 
       {/* Keyboard shortcuts info */}
       <div className="mt-4 text-xs text-center text-muted-foreground">
-        <p>Keyboard shortcuts: Alt+1,2,3 (switch modes) | Ctrl+D (toggle theme) | Ctrl+S (toggle sound)</p>
+        <p>Keyboard shortcuts: Alt+1,2,3 (switch modes) | Ctrl+D (toggle theme) | Ctrl+S (toggle sound) | Shift+Enter (convert)</p>
       </div>
 
       {/* Footer */}

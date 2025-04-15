@@ -1,37 +1,73 @@
+
 // Calculator utility functions
 
 // Parse and evaluate mathematical expressions
 export function evaluateExpression(expression: string): string {
   try {
+    if (!expression || expression.trim() === '') {
+      return '';
+    }
+
+    // Handle special constants first
+    let processedExpr = expression
+      .replace(/π/g, 'Math.PI')
+      .replace(/e/g, 'Math.E');
+      
     // Handle factorial notation
-    let processedExpr = expression;
-    // Find and calculate factorial expressions
-    const factorialRegex = /(\d+)!/g;
-    processedExpr = processedExpr.replace(factorialRegex, (match, number) => {
+    processedExpr = processedExpr.replace(/(\d+)!/g, (match, number) => {
       return calculateFactorial(parseInt(number)).toString();
+    });
+    
+    // Handle complex factorial expressions with parentheses
+    processedExpr = processedExpr.replace(/\(([^)]+)\)!/g, (match, expr) => {
+      try {
+        // Try to evaluate the expression inside parentheses
+        const innerResult = Function('"use strict"; return (' + expr + ')')();
+        if (typeof innerResult === 'number' && Number.isInteger(innerResult) && innerResult >= 0) {
+          return calculateFactorial(innerResult).toString();
+        }
+        return match; // Keep as is if we can't calculate it
+      } catch (e) {
+        return match; // Keep as is if there's an error
+      }
     });
     
     // Replace % with /100 for percentage calculations
     processedExpr = processedExpr.replace(/(\d+)%/g, '($1/100)');
     
-    // Handle special constants
-    processedExpr = processedExpr
-      .replace(/π/g, 'Math.PI')
-      .replace(/e/g, 'Math.E');
-      
-    // Handle power notation
-    processedExpr = processedExpr.replace(/(\d+)\^(\d+)/g, 'Math.pow($1, $2)');
+    // Handle power notation (fix for x^y)
+    processedExpr = processedExpr.replace(/(\d+|\))\^(\d+|\()/g, 'Math.pow($1, $2)');
     
-    // Handle square root
+    // Handle square root, making sure any expression inside is evaluated
     processedExpr = processedExpr.replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)');
     
     // Handle absolute value
     processedExpr = processedExpr.replace(/abs\(([^)]+)\)/g, 'Math.abs($1)');
     
-    // Handle trigonometric functions
-    processedExpr = processedExpr.replace(/sin\(([^)]+)\)/g, 'Math.sin($1)');
-    processedExpr = processedExpr.replace(/cos\(([^)]+)\)/g, 'Math.cos($1)');
-    processedExpr = processedExpr.replace(/tan\(([^)]+)\)/g, 'Math.tan($1)');
+    // Handle trigonometric functions (convert to radians for standard Math functions)
+    // Sin
+    processedExpr = processedExpr.replace(/sin\(([^)]+)\)/g, (match, angle) => {
+      return `Math.sin(${angle} * Math.PI / 180)`;
+    });
+    // Cos
+    processedExpr = processedExpr.replace(/cos\(([^)]+)\)/g, (match, angle) => {
+      return `Math.cos(${angle} * Math.PI / 180)`;
+    });
+    // Tan
+    processedExpr = processedExpr.replace(/tan\(([^)]+)\)/g, (match, angle) => {
+      return `Math.tan(${angle} * Math.PI / 180)`;
+    });
+    
+    // Handle inverse trigonometric functions (convert from radians to degrees)
+    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]+)\)/g, (match, value) => {
+      return `(Math.asin(${value}) * 180 / Math.PI)`;
+    });
+    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]+)\)/g, (match, value) => {
+      return `(Math.acos(${value}) * 180 / Math.PI)`;
+    });
+    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]+)\)/g, (match, value) => {
+      return `(Math.atan(${value}) * 180 / Math.PI)`;
+    });
     
     // Handle log functions
     processedExpr = processedExpr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
@@ -48,7 +84,12 @@ export function evaluateExpression(expression: string): string {
         return result.toExponential(6);
       }
       
+      // Handle NaN and Infinity
+      if (isNaN(result)) return "Error";
+      if (!isFinite(result)) return "Infinity";
+      
       // Regular number formatting with up to 10 decimal places
+      // Remove trailing zeros
       const formatted = parseFloat(result.toFixed(10)).toString();
       return formatted;
     }
@@ -65,7 +106,7 @@ export function evaluateExpression(expression: string): string {
 export function calculateTrigFunction(
   func: string, 
   value: number, 
-  inDegrees: boolean = false
+  inDegrees: boolean = true
 ): number {
   // Convert to radians if in degrees
   const angleInRadians = inDegrees ? (value * Math.PI) / 180 : value;
@@ -135,6 +176,8 @@ export function calculateFactorial(n: number): number {
   let result = 1;
   for (let i = 2; i <= n; i++) {
     result *= i;
+    // Prevent overflow with a reasonable limit
+    if (!isFinite(result)) return Infinity;
   }
   return result;
 }

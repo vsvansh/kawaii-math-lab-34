@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
@@ -139,9 +140,12 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       
       const newInput = prevInput + value;
       try {
-        const preview = evaluateExpression(newInput);
-        if (preview !== "Error") {
-          setResult(preview);
+        // Only calculate preview if there's a complete expression
+        if (isCompleteExpression(newInput)) {
+          const preview = evaluateExpression(newInput);
+          if (preview !== "Error") {
+            setResult(preview);
+          }
         }
       } catch {
         // Ignore calculation errors during input
@@ -149,6 +153,26 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       
       return newInput;
     });
+  };
+
+  // Helper to check if the expression is complete enough to evaluate
+  const isCompleteExpression = (expr: string): boolean => {
+    // Check for balanced parentheses
+    const openCount = (expr.match(/\(/g) || []).length;
+    const closeCount = (expr.match(/\)/g) || []).length;
+    
+    // Don't evaluate if parentheses are unbalanced
+    if (openCount !== closeCount) return false;
+    
+    // Don't evaluate if ends with operator
+    const operators = ['+', '-', '*', '/', '^'];
+    if (operators.includes(expr.slice(-1))) return false;
+    
+    // Don't evaluate if ends with function name without closing parenthesis
+    const funcPattern = /(sin|cos|tan|log|ln|sqrt|abs)$/;
+    if (funcPattern.test(expr)) return false;
+    
+    return true;
   };
 
   const appendTrigFunction = (func: string) => {
@@ -161,27 +185,33 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
 
   const appendSquare = () => {
     setInput(prevInput => {
-      try {
-        const value = evaluateExpression(prevInput);
-        if (value !== "Error") {
-          return `(${prevInput})^2`;
-        }
-      } catch {}
+      // Check if we need to wrap the expression in parentheses
+      const needsParens = prevInput.includes('+') || 
+                          prevInput.includes('-') || 
+                          prevInput.includes('*') || 
+                          prevInput.includes('/');
       
-      return prevInput + '^2';
+      if (needsParens) {
+        return `(${prevInput})^2`;
+      } else {
+        return prevInput !== '' ? `${prevInput}^2` : '';
+      }
     });
   };
 
   const appendCube = () => {
     setInput(prevInput => {
-      try {
-        const value = evaluateExpression(prevInput);
-        if (value !== "Error") {
-          return `(${prevInput})^3`;
-        }
-      } catch {}
+      // Check if we need to wrap the expression in parentheses
+      const needsParens = prevInput.includes('+') || 
+                          prevInput.includes('-') || 
+                          prevInput.includes('*') || 
+                          prevInput.includes('/');
       
-      return prevInput + '^3';
+      if (needsParens) {
+        return `(${prevInput})^3`;
+      } else {
+        return prevInput !== '' ? `${prevInput}^3` : '';
+      }
     });
   };
 
@@ -195,19 +225,18 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
 
   const appendFactorial = () => {
     setInput(prevInput => {
-      try {
-        const needsParens = prevInput.includes('+') || 
-                          prevInput.includes('-') || 
-                          prevInput.includes('*') || 
-                          prevInput.includes('/');
-        
-        if (needsParens) {
-          return `(${prevInput})!`;
-        } else {
-          return `${prevInput}!`;
-        }
-      } catch {
-        return prevInput + '!';
+      if (!prevInput) return '';
+      
+      // Check if we need to wrap the expression in parentheses
+      const needsParens = prevInput.includes('+') || 
+                        prevInput.includes('-') || 
+                        prevInput.includes('*') || 
+                        prevInput.includes('/');
+      
+      if (needsParens) {
+        return `(${prevInput})!`;
+      } else {
+        return `${prevInput}!`;
       }
     });
   };
@@ -221,7 +250,10 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendAbsoluteValue = () => {
-    setInput(prevInput => `abs(${prevInput})`);
+    setInput(prevInput => {
+      if (!prevInput) return 'abs(';
+      return `abs(${prevInput})`;
+    });
   };
 
   const handleMemoryRecall = () => {

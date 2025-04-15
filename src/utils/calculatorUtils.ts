@@ -37,6 +37,8 @@ export function evaluateExpression(expression: string): string {
     
     // Handle power notation (fix for x^y)
     processedExpr = processedExpr.replace(/(\d+|\))\^(\d+|\()/g, 'Math.pow($1, $2)');
+    processedExpr = processedExpr.replace(/\(([^)]+)\)\^(\d+|\()/g, 'Math.pow($1, $2)');
+    processedExpr = processedExpr.replace(/(\d+|\))\^\(([^)]+)\)/g, 'Math.pow($1, $2)');
     
     // Handle square root, making sure any expression inside is evaluated
     processedExpr = processedExpr.replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)');
@@ -72,6 +74,14 @@ export function evaluateExpression(expression: string): string {
     // Handle log functions
     processedExpr = processedExpr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
     processedExpr = processedExpr.replace(/ln\(([^)]+)\)/g, 'Math.log($1)');
+    
+    // Ensure balanced parentheses for evaluation
+    const openCount = (processedExpr.match(/\(/g) || []).length;
+    const closeCount = (processedExpr.match(/\)/g) || []).length;
+    if (openCount > closeCount) {
+      // Add missing closing parentheses
+      processedExpr += ')'.repeat(openCount - closeCount);
+    }
     
     // Safe evaluation using Function constructor
     // eslint-disable-next-line no-new-func

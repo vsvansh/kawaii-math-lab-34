@@ -263,7 +263,7 @@ const Index = () => {
       duration: 1,
       delay: 0.6
     }} className="mt-6 text-center text-sm text-muted-foreground">
-        <p>Kawaii Math Lab • Made with ❤️</p>
+        <p>Kawaii Calculator • Made with ❤️ by Vansh Singla</p>
         <p className="mt-1">Your cute math companion</p>
       </motion.footer>
     </div>;

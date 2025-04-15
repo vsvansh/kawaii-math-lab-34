@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
@@ -14,6 +13,8 @@ interface BasicCalculatorProps {
   memory?: string | null;
   setMemory?: React.Dispatch<React.SetStateAction<string | null>>;
   isSoundEnabled: boolean;
+  cursorPosition?: number | null;
+  setCursorPosition?: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 const BasicCalculator: React.FC<BasicCalculatorProps> = ({ 
@@ -24,12 +25,12 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
   addToHistory,
   memory: externalMemory,
   setMemory: setExternalMemory,
-  isSoundEnabled
+  isSoundEnabled,
+  cursorPosition,
+  setCursorPosition
 }) => {
-  // Use local memory state if external is not provided
   const [localMemory, setLocalMemory] = useState<string | null>(null);
   
-  // Use either external or local memory state
   const memoryValue = externalMemory !== undefined ? externalMemory : localMemory;
   const setMemoryValue = setExternalMemory || setLocalMemory;
 
@@ -80,18 +81,15 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
   const toggleSign = () => {
     if (input === '') return;
     
-    // If input starts with a minus, remove it
     if (input.startsWith('-')) {
       setInput(input.substring(1));
     } else {
-      // Otherwise add a minus at the beginning
       setInput('-' + input);
     }
   };
 
   const appendInput = (value: string) => {
     setInput(prevInput => {
-      // Replace operators if one is already present at the end
       const operators = ['+', '-', '*', '/', '.'];
       const lastChar = prevInput.slice(-1);
       
@@ -99,7 +97,6 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
         return prevInput.slice(0, -1) + value;
       }
       
-      // Format display value for preview calculation
       const newInput = prevInput + value;
       try {
         const preview = evaluateExpression(newInput);
@@ -107,14 +104,12 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
           setResult(preview);
         }
       } catch {
-        // Ignore calculation errors during input
       }
       
       return newInput;
     });
   };
 
-  // Memory functions
   const handleMemoryRecall = () => {
     if (memoryValue) {
       setInput(prevInput => prevInput + memoryValue);
@@ -145,12 +140,19 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
     }
   };
 
-  // Handle paste events for the calculator display
   const handleCalculatorPaste = (pastedText: string) => {
     if (pastedText) {
-      setInput(prevInput => prevInput + pastedText);
+      setInput(prevInput => {
+        if (cursorPosition !== null && setCursorPosition && cursorPosition <= prevInput.length) {
+          const before = prevInput.substring(0, cursorPosition);
+          const after = prevInput.substring(cursorPosition);
+          setCursorPosition(cursorPosition + pastedText.length);
+          return before + pastedText + after;
+        } else {
+          return prevInput + pastedText;
+        }
+      });
       
-      // Try to calculate preview with the pasted content
       try {
         const newInput = input + pastedText;
         const preview = evaluateExpression(newInput);
@@ -158,7 +160,6 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
           setResult(preview);
         }
       } catch {
-        // Ignore calculation errors during paste
       }
     }
   };
@@ -180,36 +181,30 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
       />
       
       <div className="grid grid-cols-4 gap-2 mt-2">
-        {/* Row 1 */}
         <CalculatorButton value="C" onClick={handleButtonClick} variant="clear" isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="%" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="±" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="/" onClick={handleButtonClick} variant="operator" label="÷" isSoundEnabled={isSoundEnabled} />
         
-        {/* Row 2 */}
         <CalculatorButton value="7" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="8" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="9" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="*" onClick={handleButtonClick} variant="operator" label="×" isSoundEnabled={isSoundEnabled} />
         
-        {/* Row 3 */}
         <CalculatorButton value="4" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="5" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="6" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="-" onClick={handleButtonClick} variant="operator" isSoundEnabled={isSoundEnabled} />
         
-        {/* Row 4 */}
         <CalculatorButton value="1" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="2" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="3" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="+" onClick={handleButtonClick} variant="operator" isSoundEnabled={isSoundEnabled} />
         
-        {/* Row 5 */}
         <CalculatorButton value="0" onClick={handleButtonClick} colSpan={2} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="." onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="=" onClick={handleButtonClick} variant="equals" isSoundEnabled={isSoundEnabled} />
         
-        {/* Row 6 */}
         <CalculatorButton value="(" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value=")" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
         <CalculatorButton value="⌫" onClick={handleButtonClick} variant="clear" colSpan={2} isSoundEnabled={isSoundEnabled} />

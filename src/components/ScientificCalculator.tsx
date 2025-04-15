@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
@@ -381,8 +382,8 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
             setResult(preview);
           }
         }, 10);
-      } catch {
-        console.error("Paste error:", error);
+      } catch (err) {
+        console.error("Paste error:", err);
       }
     }
   };

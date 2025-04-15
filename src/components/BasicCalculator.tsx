@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
@@ -13,8 +14,8 @@ interface BasicCalculatorProps {
   memory?: string | null;
   setMemory?: React.Dispatch<React.SetStateAction<string | null>>;
   isSoundEnabled: boolean;
-  cursorPosition?: number | null;
-  setCursorPosition?: React.Dispatch<React.SetStateAction<number | null>>;
+  cursorPosition: number | null;
+  setCursorPosition: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 const BasicCalculator: React.FC<BasicCalculatorProps> = ({ 
@@ -47,6 +48,9 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
         break;
       case '±':
         toggleSign();
+        break;
+      case '(':
+        appendParenthesis(value);
         break;
       default:
         appendInput(value);
@@ -89,25 +93,45 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
   };
 
   const appendInput = (value: string) => {
-    setInput(prevInput => {
-      const operators = ['+', '-', '*', '/', '.'];
-      const lastChar = prevInput.slice(-1);
-      
-      if (operators.includes(value) && operators.includes(lastChar)) {
-        return prevInput.slice(0, -1) + value;
-      }
-      
-      const newInput = prevInput + value;
-      try {
-        const preview = evaluateExpression(newInput);
-        if (preview !== "Error") {
-          setResult(preview);
+    if (cursorPosition !== null && cursorPosition >= 0 && cursorPosition <= input.length) {
+      const before = input.substring(0, cursorPosition);
+      const after = input.substring(cursorPosition);
+      setInput(before + value + after);
+      setCursorPosition(cursorPosition + value.length);
+    } else {
+      setInput(prevInput => {
+        const operators = ['+', '-', '*', '/', '.'];
+        const lastChar = prevInput.slice(-1);
+        
+        if (operators.includes(value) && operators.includes(lastChar)) {
+          return prevInput.slice(0, -1) + value;
         }
-      } catch {
-      }
-      
-      return newInput;
-    });
+        
+        const newInput = prevInput + value;
+        try {
+          const preview = evaluateExpression(newInput);
+          if (preview !== "Error") {
+            setResult(preview);
+          }
+        } catch {
+          // Ignore evaluation errors during typing
+        }
+        
+        return newInput;
+      });
+    }
+  };
+
+  const appendParenthesis = (value: string) => {
+    if (value === '(') {
+      setInput(prevInput => {
+        const newInput = prevInput + '()';
+        setCursorPosition(prevInput.length + 1);
+        return newInput;
+      });
+    } else {
+      appendInput(value);
+    }
   };
 
   const handleMemoryRecall = () => {
@@ -143,7 +167,7 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
   const handleCalculatorPaste = (pastedText: string) => {
     if (pastedText) {
       setInput(prevInput => {
-        if (cursorPosition !== null && setCursorPosition && cursorPosition <= prevInput.length) {
+        if (cursorPosition !== null && cursorPosition <= prevInput.length) {
           const before = prevInput.substring(0, cursorPosition);
           const after = prevInput.substring(cursorPosition);
           setCursorPosition(cursorPosition + pastedText.length);
@@ -160,9 +184,20 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
           setResult(preview);
         }
       } catch {
+        // Ignore evaluation errors during paste
       }
     }
   };
+
+  useEffect(() => {
+    if (cursorPosition !== null) {
+      const timer = setTimeout(() => {
+        setCursorPosition(null);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [cursorPosition, setCursorPosition]);
 
   return (
     <div className="w-full max-w-sm mx-auto">

@@ -127,6 +127,13 @@ export function evaluateExpression(expression: string): string {
       return ""; // Return empty for preview instead of error
     }
     
+    // Handle power notation better for variables
+    processedExpr = processedExpr.replace(/Math\.pow\(([^,]+), ([^)]+)\)/g, (match, base, exp) => {
+      // If either base or exponent contains variables or complex expressions,
+      // we need to ensure they're properly evaluated
+      return `Math.pow(${base}, ${exp})`;
+    });
+    
     // Improved safe evaluation using Function constructor with try/catch
     try {
       // eslint-disable-next-line no-new-func

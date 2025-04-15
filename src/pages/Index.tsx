@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicCalculator from '@/components/BasicCalculator';
@@ -10,11 +11,13 @@ import KawaiiCharacter from '@/components/KawaiiCharacter';
 import { DecorativeBackground } from '@/components/DecorativeElements';
 import { motion } from 'framer-motion';
 import { initializeAudio, playModeChangeSound } from '@/utils/soundUtils';
+
 interface HistoryItem {
   input: string;
   result: string;
   timestamp: number;
 }
+
 const Index = () => {
   const [input, setInput] = useState('');
   const [result, setResult] = useState('');
@@ -27,6 +30,7 @@ const Index = () => {
   const [memory, setMemory] = useState<string | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(false);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+
   useEffect(() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDarkMode(prefersDark);
@@ -34,6 +38,7 @@ const Index = () => {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
   useEffect(() => {
     const handleFirstInteraction = () => {
       initializeAudio();
@@ -47,6 +52,7 @@ const Index = () => {
       window.removeEventListener('keydown', handleFirstInteraction);
     };
   }, []);
+
   const toggleTheme = () => {
     setIsDarkMode(prevMode => {
       const newMode = !prevMode;
@@ -58,9 +64,11 @@ const Index = () => {
       return newMode;
     });
   };
+
   const toggleSound = () => {
     setIsSoundEnabled(prev => !prev);
   };
+
   const handleModeChange = (mode: 'basic' | 'scientific' | 'converter') => {
     setPreviousMode(calculatorMode);
     setCalculatorMode(mode);
@@ -68,6 +76,7 @@ const Index = () => {
       playModeChangeSound(isSoundEnabled);
     }
   };
+
   useEffect(() => {
     if (input.length > 8) {
       setKawaiiMood('curious');
@@ -79,6 +88,7 @@ const Index = () => {
       setKawaiiMood('happy');
     }
   }, [input]);
+
   const addToHistory = (input: string, result: string) => {
     setHistory(prev => [{
       input,
@@ -86,12 +96,15 @@ const Index = () => {
       timestamp: Date.now()
     }, ...prev]);
   };
+
   const handleHistoryItemClick = (input: string) => {
     setInput(input);
   };
+
   const handleClearHistory = () => {
     setHistory([]);
   };
+
   const handleCalculatorPaste = (pastedText: string) => {
     if (pastedText) {
       setInput(prevInput => {
@@ -106,16 +119,20 @@ const Index = () => {
       });
     }
   };
+
   const [inParenthesesMode, setInParenthesesMode] = useState(false);
   const lastFunctionRef = useRef<string>('');
+
   const checkForOpenParentheses = (text: string) => {
     const openCount = (text.match(/\(/g) || []).length;
     const closeCount = (text.match(/\)/g) || []).length;
     return openCount > closeCount;
   };
+
   useEffect(() => {
     setInParenthesesMode(checkForOpenParentheses(input));
   }, [input]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement) {
@@ -187,6 +204,7 @@ const Index = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
   return <div className="min-h-screen pt-8 pb-16 px-4 flex flex-col items-center relative">
       <DecorativeBackground />
       <header className="w-full max-w-2xl flex justify-between items-center mb-6">
@@ -224,11 +242,31 @@ const Index = () => {
             </TabsList>
             
             <TabsContent value="basic" className="mt-0">
-              <BasicCalculator input={input} setInput={setInput} result={result} setResult={setResult} addToHistory={addToHistory} memory={memory} setMemory={setMemory} isSoundEnabled={isSoundEnabled} cursorPosition={cursorPosition} setCursorPosition={setCursorPosition} />
+              <BasicCalculator 
+                input={input} 
+                setInput={setInput} 
+                result={result} 
+                setResult={setResult} 
+                addToHistory={addToHistory} 
+                memory={memory} 
+                setMemory={setMemory} 
+                isSoundEnabled={isSoundEnabled}
+                cursorPosition={cursorPosition}
+                setCursorPosition={setCursorPosition}
+              />
             </TabsContent>
             
             <TabsContent value="scientific" className="mt-0">
-              <ScientificCalculator input={input} setInput={setInput} result={result} setResult={setResult} addToHistory={addToHistory} memory={memory} setMemory={setMemory} isSoundEnabled={isSoundEnabled} />
+              <ScientificCalculator 
+                input={input} 
+                setInput={setInput} 
+                result={result} 
+                setResult={setResult} 
+                addToHistory={addToHistory} 
+                memory={memory} 
+                setMemory={setMemory} 
+                isSoundEnabled={isSoundEnabled} 
+              />
             </TabsContent>
             
             <TabsContent value="converter" className="mt-0">

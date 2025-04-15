@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ClipboardPaste } from 'lucide-react';
 
 interface MemoryPanelProps {
   memory: string | null;
@@ -7,6 +8,7 @@ interface MemoryPanelProps {
   onMemoryClear: () => void;
   onMemoryAdd: () => void;
   onMemorySubtract: () => void;
+  onPaste?: () => void;
 }
 
 const MemoryPanel: React.FC<MemoryPanelProps> = ({
@@ -15,9 +17,10 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({
   onMemoryClear,
   onMemoryAdd,
   onMemorySubtract,
+  onPaste,
 }) => {
   return (
-    <div className="flex space-x-2 my-2">
+    <div className="flex items-center space-x-2 my-2">
       <button
         onClick={onMemoryRecall}
         disabled={!memory}
@@ -52,6 +55,15 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({
       >
         M-
       </button>
+      {onPaste && (
+        <button
+          onClick={onPaste}
+          title="Paste from clipboard"
+          className="kawaii-btn px-2 py-1 text-xs bg-kawaii-yellow-light text-kawaii-yellow-dark hover:bg-kawaii-yellow flex items-center"
+        >
+          <ClipboardPaste size={14} className="mr-1" /> Paste
+        </button>
+      )}
       {memory && (
         <div className="kawaii-btn px-2 py-1 text-xs bg-kawaii-yellow-light text-kawaii-yellow-dark">
           M: {memory}

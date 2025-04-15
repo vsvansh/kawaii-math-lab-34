@@ -227,12 +227,10 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendFunctionWithParentheses = (func: string) => {
-    const functionWithParentheses = `${func}()`;
-    
     setInput(prevInput => {
-      const newInput = prevInput + functionWithParentheses;
-      const cursorPos = prevInput.length + func.length + 1;
-      setCursorPosition(cursorPos);
+      const newInput = prevInput + `${func}()`;
+      // Position cursor inside the parentheses
+      setCursorPosition(prevInput.length + func.length + 1);
       return newInput;
     });
   };
@@ -388,6 +386,19 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
     }
   };
 
+  const handlePasteButtonClick = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        // Filter to only allow valid calculator characters
+        const filteredText = text.replace(/[^0-9+\-*/().%^πe]/g, '');
+        handleCalculatorPaste(filteredText);
+      }
+    } catch (err) {
+      console.error('Failed to read clipboard contents: ', err);
+    }
+  };
+
   useEffect(() => {
     if (cursorPosition !== null) {
       const timer = setTimeout(() => {
@@ -417,6 +428,7 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
           onMemoryClear={handleMemoryClear}
           onMemoryAdd={handleMemoryAdd}
           onMemorySubtract={handleMemorySubtract}
+          onPaste={handlePasteButtonClick}
         />
       </div>
       

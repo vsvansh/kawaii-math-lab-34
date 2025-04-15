@@ -189,6 +189,19 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
     }
   };
 
+  const handlePasteButtonClick = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        // Filter to only allow valid calculator characters
+        const filteredText = text.replace(/[^0-9+\-*/().%^πe]/g, '');
+        handleCalculatorPaste(filteredText);
+      }
+    } catch (err) {
+      console.error('Failed to read clipboard contents: ', err);
+    }
+  };
+
   useEffect(() => {
     if (cursorPosition !== null) {
       const timer = setTimeout(() => {
@@ -213,6 +226,7 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
         onMemoryClear={handleMemoryClear}
         onMemoryAdd={handleMemoryAdd}
         onMemorySubtract={handleMemorySubtract}
+        onPaste={handlePasteButtonClick}
       />
       
       <div className="grid grid-cols-4 gap-2 mt-2">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicCalculator from '@/components/BasicCalculator';
@@ -29,8 +28,8 @@ const Index = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [memory, setMemory] = useState<string | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
 
-  // Initialize theme from user preference
   useEffect(() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDarkMode(prefersDark);
@@ -40,7 +39,6 @@ const Index = () => {
     }
   }, []);
 
-  // Initialize audio context on first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
       initializeAudio();
@@ -57,7 +55,6 @@ const Index = () => {
     };
   }, []);
 
-  // Toggle theme
   const toggleTheme = () => {
     setIsDarkMode(prevMode => {
       const newMode = !prevMode;
@@ -70,23 +67,19 @@ const Index = () => {
     });
   };
 
-  // Toggle sound
   const toggleSound = () => {
     setIsSoundEnabled(prev => !prev);
   };
 
-  // Handle mode change with sound
   const handleModeChange = (mode: 'basic' | 'scientific' | 'converter') => {
     setPreviousMode(calculatorMode);
     setCalculatorMode(mode);
     
-    // Play mode change sound if enabled and mode actually changed
     if (isSoundEnabled && mode !== calculatorMode) {
       playModeChangeSound(isSoundEnabled);
     }
   };
 
-  // Update kawaii character based on calculator activity
   useEffect(() => {
     if (input.length > 8) {
       setKawaiiMood('curious');
@@ -99,7 +92,6 @@ const Index = () => {
     }
   }, [input]);
 
-  // Add item to history
   const addToHistory = (input: string, result: string) => {
     setHistory(prev => [
       {
@@ -111,39 +103,45 @@ const Index = () => {
     ]);
   };
 
-  // Use history item
   const handleHistoryItemClick = (input: string) => {
     setInput(input);
   };
 
-  // Clear history
   const handleClearHistory = () => {
     setHistory([]);
   };
 
-  // Track if user is in parentheses input mode
+  const handleCalculatorPaste = (pastedText: string) => {
+    if (pastedText) {
+      setInput(prevInput => {
+        if (cursorPosition !== null && cursorPosition <= prevInput.length) {
+          const before = prevInput.substring(0, cursorPosition);
+          const after = prevInput.substring(cursorPosition);
+          setCursorPosition(cursorPosition + pastedText.length);
+          return before + pastedText + after;
+        } else {
+          return prevInput + pastedText;
+        }
+      });
+    }
+  };
+
   const [inParenthesesMode, setInParenthesesMode] = useState(false);
   const lastFunctionRef = useRef<string>('');
   
-  // Helper function to determine if cursor should be inside parentheses
   const checkForOpenParentheses = (text: string) => {
     const openCount = (text.match(/\(/g) || []).length;
     const closeCount = (text.match(/\)/g) || []).length;
     
-    // If there are more open parentheses than closed ones,
-    // we might want to position the cursor inside them
     return openCount > closeCount;
   };
   
-  // Effect to update parentheses mode when input changes
   useEffect(() => {
     setInParenthesesMode(checkForOpenParentheses(input));
   }, [input]);
 
-  // Enhanced keyboard input handler
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Skip if inputs or textareas are focused
       if (
         document.activeElement instanceof HTMLInputElement ||
         document.activeElement instanceof HTMLTextAreaElement
@@ -153,7 +151,6 @@ const Index = () => {
 
       const key = event.key;
       
-      // Handle numbers, operators and functions
       if (/^[0-9+\-*/().%^]$/.test(key)) {
         setInput(prev => prev + key);
         const buttonEl = document.querySelector(`button[data-value="${key}"]`);
@@ -163,16 +160,14 @@ const Index = () => {
         }
       }
       
-      // Handle equals and enter
       if (key === '=' || key === 'Enter') {
-        event.preventDefault(); // Prevent form submission if in a form
+        event.preventDefault();
         const equalsButton = document.querySelector('button[value="="]');
         if (equalsButton) {
           equalsButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         }
       }
       
-      // Handle backspace
       if (key === 'Backspace') {
         setInput(prev => prev.slice(0, -1));
         const backspaceButton = document.querySelector('button[value="⌫"]');
@@ -181,7 +176,6 @@ const Index = () => {
         }
       }
       
-      // Handle escape (clear)
       if (key === 'Escape') {
         setInput('');
         setResult('');
@@ -191,7 +185,6 @@ const Index = () => {
         }
       }
 
-      // Toggle calculator modes with keyboard shortcuts
       if (event.altKey && key === '1') {
         handleModeChange('basic');
       } else if (event.altKey && key === '2') {
@@ -200,7 +193,6 @@ const Index = () => {
         handleModeChange('converter');
       }
 
-      // Toggle theme and sound with keyboard shortcuts
       if (event.ctrlKey && key === 'd') {
         event.preventDefault();
         toggleTheme();
@@ -209,12 +201,9 @@ const Index = () => {
         toggleSound();
       }
       
-      // Handle paste from clipboard with Ctrl+V
       if (event.ctrlKey && key === 'v') {
-        // Allow the default paste behavior to work with our custom handler
         const displayElement = document.querySelector('.kawaii-display');
         if (displayElement) {
-          // Focus the calculator display to receive the paste event
           const inputDisplay = displayElement.querySelector('div[contentEditable="false"]');
           if (inputDisplay) {
             (inputDisplay as HTMLElement).focus();
@@ -233,7 +222,6 @@ const Index = () => {
   return (
     <div className="min-h-screen pt-8 pb-16 px-4 flex flex-col items-center relative">
       <DecorativeBackground />
-      {/* Header & Theme Toggle */}
       <header className="w-full max-w-2xl flex justify-between items-center mb-6">
         <div className="flex items-center">
           <KawaiiCharacter variant={kawaiiMood} className="mr-3" />
@@ -247,9 +235,7 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="w-full max-w-2xl flex flex-col md:flex-row gap-6">
-        {/* Calculator Panel */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -291,6 +277,8 @@ const Index = () => {
                 memory={memory}
                 setMemory={setMemory}
                 isSoundEnabled={isSoundEnabled}
+                cursorPosition={cursorPosition}
+                setCursorPosition={setCursorPosition}
               />
             </TabsContent>
             
@@ -316,7 +304,6 @@ const Index = () => {
           </Tabs>
         </motion.div>
 
-        {/* History Panel */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -331,12 +318,10 @@ const Index = () => {
         </motion.div>
       </main>
 
-      {/* Keyboard shortcuts info */}
       <div className="mt-4 text-xs text-center text-muted-foreground">
         <p>Keyboard shortcuts: Alt+1,2,3 (switch modes) | Ctrl+D (toggle theme) | Ctrl+S (toggle sound) | Shift+Enter (convert)</p>
       </div>
 
-      {/* Footer */}
       <motion.footer 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

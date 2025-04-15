@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { formatDisplayValue } from '@/utils/calculatorUtils';
+import { ClipboardPaste } from 'lucide-react';
 
 interface CalculatorDisplayProps {
   input: string;
@@ -39,6 +40,19 @@ const CalculatorDisplay: React.FC<CalculatorDisplayProps> = ({
       }
     };
   }, [onInputPaste]);
+
+  const handlePasteButtonClick = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && onInputPaste) {
+        // Filter to only allow valid calculator characters
+        const filteredText = text.replace(/[^0-9+\-*/().%^πe]/g, '');
+        onInputPaste(filteredText);
+      }
+    } catch (err) {
+      console.error('Failed to read clipboard contents: ', err);
+    }
+  };
   
   return (
     <div className="kawaii-display relative overflow-hidden">
@@ -48,6 +62,15 @@ const CalculatorDisplay: React.FC<CalculatorDisplayProps> = ({
         <div className="h-2 w-2 rounded-full bg-kawaii-yellow-dark opacity-60"></div>
         <div className="h-2 w-2 rounded-full bg-kawaii-mint-dark opacity-60"></div>
       </div>
+      
+      {/* Paste Button */}
+      <button 
+        onClick={handlePasteButtonClick}
+        className="absolute top-1 right-2 p-1 rounded-md hover:bg-muted/50 text-muted-foreground transition-colors"
+        title="Paste from clipboard"
+      >
+        <ClipboardPaste size={16} />
+      </button>
       
       <div className="flex flex-col h-full">
         {/* Input Display (Formula) */}

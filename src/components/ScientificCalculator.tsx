@@ -34,17 +34,15 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   
   const [localMemory, setLocalMemory] = useState<string | null>(null);
   
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+  
   const memoryValue = externalMemory !== undefined ? externalMemory : localMemory;
   const setMemoryValue = setExternalMemory || setLocalMemory;
   
-  // Function to get cursor position in the input
   const getCursorPosition = (input: string): number => {
-    // Count open and close parentheses
     const openParens = (input.match(/\(/g) || []).length;
     const closeParens = (input.match(/\)/g) || []).length;
     
-    // If there are more open parentheses than closed ones,
-    // position is after the last open parenthesis without a matching closing one
     if (openParens > closeParens) {
       let openCount = 0;
       let closeCount = 0;
@@ -53,16 +51,13 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
         if (input[i] === '(') openCount++;
         if (input[i] === ')') closeCount++;
         
-        // When we find an open parenthesis without a matching close one
         if (openCount > closeCount) {
-          // Find the position after this open parenthesis
           const pos = input.indexOf('(', i - 1) + 1;
           if (pos > 0) return pos;
         }
       }
     }
     
-    // Default to end of input
     return input.length;
   };
   
@@ -125,13 +120,11 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   const calculateResult = () => {
     try {
       if (input) {
-        // Ensure all parentheses are properly closed before evaluation
         let processedInput = input;
         const openCount = (processedInput.match(/\(/g) || []).length;
         const closeCount = (processedInput.match(/\)/g) || []).length;
         
         if (openCount > closeCount) {
-          // Add missing closing parentheses
           processedInput += ')'.repeat(openCount - closeCount);
         }
         
@@ -169,86 +162,77 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendInput = (value: string) => {
-    setInput(prevInput => {
-      const operators = ['+', '-', '*', '/', '.'];
-      const lastChar = prevInput.slice(-1);
-      
-      // If operators are repeated, replace the last one
-      if (operators.includes(value) && operators.includes(lastChar)) {
-        return prevInput.slice(0, -1) + value;
-      }
-      
-      // Special handling for parentheses input
-      if (value === ')') {
-        // Only add closing parenthesis if there's an open one
-        const openCount = (prevInput.match(/\(/g) || []).length;
-        const closeCount = (prevInput.match(/\)/g) || []).length;
+    if (cursorPosition !== null && cursorPosition >= 0 && cursorPosition <= input.length) {
+      const before = input.substring(0, cursorPosition);
+      const after = input.substring(cursorPosition);
+      setInput(before + value + after);
+      setCursorPosition(cursorPosition + value.length);
+    } else {
+      setInput(prevInput => {
+        const operators = ['+', '-', '*', '/', '.'];
+        const lastChar = prevInput.slice(-1);
         
-        if (openCount <= closeCount) {
-          return prevInput; // Don't add extra closing parentheses
+        if (operators.includes(value) && operators.includes(lastChar)) {
+          return prevInput.slice(0, -1) + value;
         }
-      }
-      
-      const newInput = prevInput + value;
-      try {
-        // Only calculate preview if there's a complete expression
-        if (isCompleteExpression(newInput)) {
-          // Ensure all parentheses are properly closed before preview calculation
-          let processedInput = newInput;
-          const openCount = (processedInput.match(/\(/g) || []).length;
-          const closeCount = (processedInput.match(/\)/g) || []).length;
+        
+        if (value === ')') {
+          const openCount = (prevInput.match(/\(/g) || []).length;
+          const closeCount = (prevInput.match(/\)/g) || []).length;
           
-          if (openCount > closeCount) {
-            // Add temporary closing parentheses for preview
-            processedInput += ')'.repeat(openCount - closeCount);
-          }
-          
-          const preview = evaluateExpression(processedInput);
-          if (preview !== "Error") {
-            setResult(preview);
+          if (openCount <= closeCount) {
+            return prevInput;
           }
         }
-      } catch {
-        // Ignore calculation errors during input
-      }
-      
-      return newInput;
-    });
+        
+        const newInput = prevInput + value;
+        try {
+          if (isCompleteExpression(newInput)) {
+            let processedInput = newInput;
+            const openCount = (processedInput.match(/\(/g) || []).length;
+            const closeCount = (processedInput.match(/\)/g) || []).length;
+            
+            if (openCount > closeCount) {
+              processedInput += ')'.repeat(openCount - closeCount);
+            }
+            
+            const preview = evaluateExpression(processedInput);
+            if (preview !== "Error") {
+              setResult(preview);
+            }
+          }
+        } catch {
+          setResult("Error");
+        }
+        
+        return newInput;
+      });
+    }
   };
 
-  // Helper to check if the expression is complete enough to evaluate
   const isCompleteExpression = (expr: string): boolean => {
-    // Check for balanced parentheses
     const openCount = (expr.match(/\(/g) || []).length;
     const closeCount = (expr.match(/\)/g) || []).length;
     
-    // Don't evaluate if parentheses are unbalanced
     if (openCount !== closeCount) return false;
     
-    // Don't evaluate if ends with operator
     const operators = ['+', '-', '*', '/', '^'];
     if (operators.includes(expr.slice(-1))) return false;
     
-    // Don't evaluate if ends with function name without closing parenthesis
     const funcPattern = /(sin|cos|tan|log|ln|sqrt|abs)$/;
     if (funcPattern.test(expr)) return false;
     
     return true;
   };
 
-  // Reference to store current cursor position in the input
-  const cursorPosRef = useRef<number | null>(null);
-  
-  // Generic function to append any function with parentheses
-  // and automatically place cursor inside the parentheses
   const appendFunctionWithParentheses = (func: string) => {
     const functionWithParentheses = `${func}()`;
-    const cursorOffset = func.length + 1; // Position after opening parenthesis
     
     setInput(prevInput => {
-      // Store new cursor position for reference
-      cursorPosRef.current = prevInput.length + cursorOffset;
-      return prevInput + functionWithParentheses;
+      const newInput = prevInput + functionWithParentheses;
+      const cursorPos = prevInput.length + func.length + 1;
+      setCursorPosition(cursorPos);
+      return newInput;
     });
   };
 
@@ -262,7 +246,6 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
 
   const appendSquare = () => {
     setInput(prevInput => {
-      // Check if we need to wrap the expression in parentheses
       const needsParens = prevInput.includes('+') || 
                           prevInput.includes('-') || 
                           prevInput.includes('*') || 
@@ -278,7 +261,6 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
 
   const appendCube = () => {
     setInput(prevInput => {
-      // Check if we need to wrap the expression in parentheses
       const needsParens = prevInput.includes('+') || 
                           prevInput.includes('-') || 
                           prevInput.includes('*') || 
@@ -304,7 +286,6 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
     setInput(prevInput => {
       if (!prevInput) return '';
       
-      // Check if we need to wrap the expression in parentheses
       const needsParens = prevInput.includes('+') || 
                         prevInput.includes('-') || 
                         prevInput.includes('*') || 
@@ -329,19 +310,19 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   const appendAbsoluteValue = () => {
     setInput(prevInput => {
       if (!prevInput) {
-        cursorPosRef.current = 4; // Position after 'abs('
-        return 'abs()';
+        const newInput = 'abs()';
+        setCursorPosition(4);
+        return newInput;
       }
       
-      // Check if we need to wrap existing input or just start a new function
       const needsWrap = !prevInput.endsWith('(');
       
       if (needsWrap) {
-        // In this case, no need to position cursor inside as we're wrapping existing input
         return `abs(${prevInput})`;
       } else {
-        cursorPosRef.current = prevInput.length + 4; // Position after 'abs('
-        return `${prevInput}abs()`;
+        const newInput = `${prevInput}abs()`;
+        setCursorPosition(prevInput.length + 4);
+        return newInput;
       }
     });
   };
@@ -376,49 +357,45 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
     }
   };
 
-  // Handle pasted content
   const handleCalculatorPaste = (pastedText: string) => {
     if (pastedText) {
       setInput(prevInput => {
-        // If we have a cursor position, insert at that position
-        if (cursorPosRef.current !== null && cursorPosRef.current <= prevInput.length) {
-          const before = prevInput.substring(0, cursorPosRef.current);
-          const after = prevInput.substring(cursorPosRef.current);
-          // Update cursor position
-          cursorPosRef.current = cursorPosRef.current + pastedText.length;
+        if (cursorPosition !== null && cursorPosition <= prevInput.length) {
+          const before = prevInput.substring(0, cursorPosition);
+          const after = prevInput.substring(cursorPosition);
+          setCursorPosition(cursorPosition + pastedText.length);
           return before + pastedText + after;
         } else {
-          // Otherwise append to the end
           return prevInput + pastedText;
         }
       });
       
-      // Try to calculate preview with the pasted content
       try {
         setTimeout(() => {
-          const preview = evaluateExpression(input + pastedText);
+          const expressionToEvaluate = cursorPosition !== null 
+            ? input.substring(0, cursorPosition) + pastedText + input.substring(cursorPosition)
+            : input + pastedText;
+            
+          const preview = evaluateExpression(expressionToEvaluate);
           if (preview !== "Error") {
             setResult(preview);
           }
         }, 10);
       } catch {
-        // Ignore calculation errors during paste
+        console.error("Paste error:", error);
       }
     }
   };
 
-  // Effect to handle auto-positioning cursor inside parentheses
   useEffect(() => {
-    if (cursorPosRef.current !== null) {
-      // This would be used if we had a real input element
-      // Since we don't, we just keep track of the position
-      
-      // Reset cursor position after using it
-      setTimeout(() => {
-        cursorPosRef.current = null;
+    if (cursorPosition !== null) {
+      const timer = setTimeout(() => {
+        setCursorPosition(null);
       }, 100);
+      
+      return () => clearTimeout(timer);
     }
-  }, [input]);
+  }, [cursorPosition]);
 
   return (
     <div className="w-full max-w-sm mx-auto">

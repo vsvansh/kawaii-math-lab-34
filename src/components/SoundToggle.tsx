@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
-import { playToggleSound } from '@/utils/soundUtils';
+import { playToggleSound, initializeAudio } from '@/utils/soundUtils';
 
 interface SoundToggleProps {
   isSoundEnabled: boolean;
@@ -10,6 +10,9 @@ interface SoundToggleProps {
 
 const SoundToggle: React.FC<SoundToggleProps> = ({ isSoundEnabled, toggleSound }) => {
   const handleToggle = () => {
+    // Initialize audio context if this is first interaction
+    initializeAudio();
+    
     // Play toggle sound if sound is currently enabled (before toggle)
     if (isSoundEnabled) {
       playToggleSound(true);

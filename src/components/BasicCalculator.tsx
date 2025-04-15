@@ -13,6 +13,7 @@ interface BasicCalculatorProps {
   addToHistory: (input: string, result: string) => void;
   memory?: string | null;
   setMemory?: React.Dispatch<React.SetStateAction<string | null>>;
+  isSoundEnabled: boolean;
 }
 
 const BasicCalculator: React.FC<BasicCalculatorProps> = ({ 
@@ -22,7 +23,8 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
   setResult, 
   addToHistory,
   memory: externalMemory,
-  setMemory: setExternalMemory
+  setMemory: setExternalMemory,
+  isSoundEnabled
 }) => {
   // Use local memory state if external is not provided
   const [localMemory, setLocalMemory] = useState<string | null>(null);
@@ -157,38 +159,38 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
       
       <div className="grid grid-cols-4 gap-2 mt-2">
         {/* Row 1 */}
-        <CalculatorButton value="C" onClick={handleButtonClick} variant="clear" />
-        <CalculatorButton value="%" onClick={handleButtonClick} variant="function" />
-        <CalculatorButton value="±" onClick={handleButtonClick} variant="function" />
-        <CalculatorButton value="/" onClick={handleButtonClick} variant="operator" label="÷" />
+        <CalculatorButton value="C" onClick={handleButtonClick} variant="clear" isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="%" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="±" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="/" onClick={handleButtonClick} variant="operator" label="÷" isSoundEnabled={isSoundEnabled} />
         
         {/* Row 2 */}
-        <CalculatorButton value="7" onClick={handleButtonClick} />
-        <CalculatorButton value="8" onClick={handleButtonClick} />
-        <CalculatorButton value="9" onClick={handleButtonClick} />
-        <CalculatorButton value="*" onClick={handleButtonClick} variant="operator" label="×" />
+        <CalculatorButton value="7" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="8" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="9" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="*" onClick={handleButtonClick} variant="operator" label="×" isSoundEnabled={isSoundEnabled} />
         
         {/* Row 3 */}
-        <CalculatorButton value="4" onClick={handleButtonClick} />
-        <CalculatorButton value="5" onClick={handleButtonClick} />
-        <CalculatorButton value="6" onClick={handleButtonClick} />
-        <CalculatorButton value="-" onClick={handleButtonClick} variant="operator" />
+        <CalculatorButton value="4" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="5" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="6" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="-" onClick={handleButtonClick} variant="operator" isSoundEnabled={isSoundEnabled} />
         
         {/* Row 4 */}
-        <CalculatorButton value="1" onClick={handleButtonClick} />
-        <CalculatorButton value="2" onClick={handleButtonClick} />
-        <CalculatorButton value="3" onClick={handleButtonClick} />
-        <CalculatorButton value="+" onClick={handleButtonClick} variant="operator" />
+        <CalculatorButton value="1" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="2" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="3" onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="+" onClick={handleButtonClick} variant="operator" isSoundEnabled={isSoundEnabled} />
         
         {/* Row 5 */}
-        <CalculatorButton value="0" onClick={handleButtonClick} colSpan={2} />
-        <CalculatorButton value="." onClick={handleButtonClick} />
-        <CalculatorButton value="=" onClick={handleButtonClick} variant="equals" />
+        <CalculatorButton value="0" onClick={handleButtonClick} colSpan={2} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="." onClick={handleButtonClick} isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="=" onClick={handleButtonClick} variant="equals" isSoundEnabled={isSoundEnabled} />
         
         {/* Row 6 */}
-        <CalculatorButton value="(" onClick={handleButtonClick} variant="function" />
-        <CalculatorButton value=")" onClick={handleButtonClick} variant="function" />
-        <CalculatorButton value="⌫" onClick={handleButtonClick} variant="clear" colSpan={2} />
+        <CalculatorButton value="(" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value=")" onClick={handleButtonClick} variant="function" isSoundEnabled={isSoundEnabled} />
+        <CalculatorButton value="⌫" onClick={handleButtonClick} variant="clear" colSpan={2} isSoundEnabled={isSoundEnabled} />
       </div>
     </div>
   );

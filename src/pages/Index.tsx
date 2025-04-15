@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicCalculator from '@/components/BasicCalculator';
 import ScientificCalculator from '@/components/ScientificCalculator';
@@ -121,6 +121,25 @@ const Index = () => {
     setHistory([]);
   };
 
+  // Track if user is in parentheses input mode
+  const [inParenthesesMode, setInParenthesesMode] = useState(false);
+  const lastFunctionRef = useRef<string>('');
+  
+  // Helper function to determine if cursor should be inside parentheses
+  const checkForOpenParentheses = (text: string) => {
+    const openCount = (text.match(/\(/g) || []).length;
+    const closeCount = (text.match(/\)/g) || []).length;
+    
+    // If there are more open parentheses than closed ones,
+    // we might want to position the cursor inside them
+    return openCount > closeCount;
+  };
+  
+  // Effect to update parentheses mode when input changes
+  useEffect(() => {
+    setInParenthesesMode(checkForOpenParentheses(input));
+  }, [input]);
+
   // Enhanced keyboard input handler
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -188,6 +207,19 @@ const Index = () => {
       } else if (event.ctrlKey && key === 's') {
         event.preventDefault();
         toggleSound();
+      }
+      
+      // Handle paste from clipboard with Ctrl+V
+      if (event.ctrlKey && key === 'v') {
+        // Allow the default paste behavior to work with our custom handler
+        const displayElement = document.querySelector('.kawaii-display');
+        if (displayElement) {
+          // Focus the calculator display to receive the paste event
+          const inputDisplay = displayElement.querySelector('div[contentEditable="false"]');
+          if (inputDisplay) {
+            (inputDisplay as HTMLElement).focus();
+          }
+        }
       }
     };
 

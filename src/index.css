@@ -120,6 +120,19 @@
     box-shadow: 0 4px 0 theme('colors.kawaii.purple.light');
   }
   
+  .kawaii-display [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+    cursor: text;
+    outline: none;
+    caret-color: transparent;
+  }
+  
+  .kawaii-display [contenteditable="true"]:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+  }
+  
   .kawaii-btn {
     @apply flex items-center justify-center rounded-xl font-medium transition-all active:translate-y-1 text-center;
   }

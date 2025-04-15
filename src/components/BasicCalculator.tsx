@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
 import MemoryPanel from './MemoryPanel';
@@ -145,9 +145,31 @@ const BasicCalculator: React.FC<BasicCalculatorProps> = ({
     }
   };
 
+  // Handle paste events for the calculator display
+  const handleCalculatorPaste = (pastedText: string) => {
+    if (pastedText) {
+      setInput(prevInput => prevInput + pastedText);
+      
+      // Try to calculate preview with the pasted content
+      try {
+        const newInput = input + pastedText;
+        const preview = evaluateExpression(newInput);
+        if (preview !== "Error") {
+          setResult(preview);
+        }
+      } catch {
+        // Ignore calculation errors during paste
+      }
+    }
+  };
+
   return (
     <div className="w-full max-w-sm mx-auto">
-      <CalculatorDisplay input={input} result={result} />
+      <CalculatorDisplay 
+        input={input} 
+        result={result} 
+        onInputPaste={handleCalculatorPaste}
+      />
       
       <MemoryPanel
         memory={memoryValue}

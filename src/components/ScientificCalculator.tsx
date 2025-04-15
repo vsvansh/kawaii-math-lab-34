@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
 import MemoryPanel from './MemoryPanel';
@@ -236,45 +236,28 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
     return true;
   };
 
-  const appendTrigFunction = (func: string) => {
-    setInput(prevInput => {
-      // Add function name with opening AND closing parenthesis and position cursor between them
-      return prevInput + `${func}()`;
-    });
+  // Reference to store current cursor position in the input
+  const cursorPosRef = useRef<number | null>(null);
+  
+  // Generic function to append any function with parentheses
+  // and automatically place cursor inside the parentheses
+  const appendFunctionWithParentheses = (func: string) => {
+    const functionWithParentheses = `${func}()`;
+    const cursorOffset = func.length + 1; // Position after opening parenthesis
     
-    // After adding the function with parentheses, position the cursor between them
-    setTimeout(() => {
-      const element = document.activeElement as HTMLInputElement;
-      if (element && element.tagName === 'INPUT') {
-        // Try to set selection if it's an input element
-        try {
-          const position = element.value.lastIndexOf('()') + 1;
-          element.setSelectionRange(position, position);
-        } catch (e) {
-          // Ignore selection errors, not critical
-        }
-      }
-    }, 0);
+    setInput(prevInput => {
+      // Store new cursor position for reference
+      cursorPosRef.current = prevInput.length + cursorOffset;
+      return prevInput + functionWithParentheses;
+    });
+  };
+
+  const appendTrigFunction = (func: string) => {
+    appendFunctionWithParentheses(func);
   };
 
   const appendLogFunction = (func: string) => {
-    setInput(prevInput => {
-      // Add function name with opening AND closing parenthesis
-      return prevInput + `${func}()`;
-    });
-    
-    // Same cursor positioning logic as trig functions
-    setTimeout(() => {
-      const element = document.activeElement as HTMLInputElement;
-      if (element && element.tagName === 'INPUT') {
-        try {
-          const position = element.value.lastIndexOf('()') + 1;
-          element.setSelectionRange(position, position);
-        } catch (e) {
-          // Ignore selection errors
-        }
-      }
-    }, 0);
+    appendFunctionWithParentheses(func);
   };
 
   const appendSquare = () => {
@@ -310,22 +293,7 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendSquareRoot = () => {
-    setInput(prevInput => {
-      return prevInput + 'sqrt()';
-    });
-    
-    // Position cursor between parentheses
-    setTimeout(() => {
-      const element = document.activeElement as HTMLInputElement;
-      if (element && element.tagName === 'INPUT') {
-        try {
-          const position = element.value.lastIndexOf('()') + 1;
-          element.setSelectionRange(position, position);
-        } catch (e) {
-          // Ignore selection errors
-        }
-      }
-    }, 0);
+    appendFunctionWithParentheses('sqrt');
   };
 
   const appendConstant = (constant: string) => {
@@ -361,6 +329,7 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   const appendAbsoluteValue = () => {
     setInput(prevInput => {
       if (!prevInput) {
+        cursorPosRef.current = 4; // Position after 'abs('
         return 'abs()';
       }
       
@@ -368,24 +337,13 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       const needsWrap = !prevInput.endsWith('(');
       
       if (needsWrap) {
+        // In this case, no need to position cursor inside as we're wrapping existing input
         return `abs(${prevInput})`;
       } else {
+        cursorPosRef.current = prevInput.length + 4; // Position after 'abs('
         return `${prevInput}abs()`;
       }
     });
-    
-    // Position cursor between parentheses if empty abs()
-    setTimeout(() => {
-      const element = document.activeElement as HTMLInputElement;
-      if (element && element.tagName === 'INPUT') {
-        try {
-          const position = element.value.lastIndexOf('()') + 1;
-          element.setSelectionRange(position, position);
-        } catch (e) {
-          // Ignore selection errors
-        }
-      }
-    }, 0);
   };
 
   const handleMemoryRecall = () => {
@@ -418,9 +376,57 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
     }
   };
 
+  // Handle pasted content
+  const handleCalculatorPaste = (pastedText: string) => {
+    if (pastedText) {
+      setInput(prevInput => {
+        // If we have a cursor position, insert at that position
+        if (cursorPosRef.current !== null && cursorPosRef.current <= prevInput.length) {
+          const before = prevInput.substring(0, cursorPosRef.current);
+          const after = prevInput.substring(cursorPosRef.current);
+          // Update cursor position
+          cursorPosRef.current = cursorPosRef.current + pastedText.length;
+          return before + pastedText + after;
+        } else {
+          // Otherwise append to the end
+          return prevInput + pastedText;
+        }
+      });
+      
+      // Try to calculate preview with the pasted content
+      try {
+        setTimeout(() => {
+          const preview = evaluateExpression(input + pastedText);
+          if (preview !== "Error") {
+            setResult(preview);
+          }
+        }, 10);
+      } catch {
+        // Ignore calculation errors during paste
+      }
+    }
+  };
+
+  // Effect to handle auto-positioning cursor inside parentheses
+  useEffect(() => {
+    if (cursorPosRef.current !== null) {
+      // This would be used if we had a real input element
+      // Since we don't, we just keep track of the position
+      
+      // Reset cursor position after using it
+      setTimeout(() => {
+        cursorPosRef.current = null;
+      }, 100);
+    }
+  }, [input]);
+
   return (
     <div className="w-full max-w-sm mx-auto">
-      <CalculatorDisplay input={input} result={result} />
+      <CalculatorDisplay 
+        input={input} 
+        result={result}
+        onInputPaste={handleCalculatorPaste}
+      />
       
       <div className="flex justify-between items-center mb-2">
         <div className="text-xs font-medium px-2 py-1 bg-kawaii-blue-light/50 rounded-md">

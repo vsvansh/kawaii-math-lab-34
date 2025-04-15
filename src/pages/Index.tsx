@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicCalculator from '@/components/BasicCalculator';
@@ -6,9 +5,11 @@ import ScientificCalculator from '@/components/ScientificCalculator';
 import UnitConverter from '@/components/UnitConverter';
 import HistoryPanel from '@/components/HistoryPanel';
 import ThemeToggle from '@/components/ThemeToggle';
+import SoundToggle from '@/components/SoundToggle';
 import KawaiiCharacter from '@/components/KawaiiCharacter';
 import { DecorativeBackground } from '@/components/DecorativeElements';
 import { motion } from 'framer-motion';
+import { initializeAudio } from '@/utils/soundUtils';
 
 interface HistoryItem {
   input: string;
@@ -25,6 +26,7 @@ const Index = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [memory, setMemory] = useState<string | null>(null);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
 
   // Initialize theme from user preference
   useEffect(() => {
@@ -34,6 +36,23 @@ const Index = () => {
     if (prefersDark) {
       document.documentElement.classList.add('dark');
     }
+  }, []);
+
+  // Initialize audio context on first user interaction
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      initializeAudio();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
   }, []);
 
   // Toggle theme
@@ -47,6 +66,11 @@ const Index = () => {
       }
       return newMode;
     });
+  };
+
+  // Toggle sound
+  const toggleSound = () => {
+    setIsSoundEnabled(prev => !prev);
   };
 
   // Update kawaii character based on calculator activity
@@ -84,33 +108,73 @@ const Index = () => {
     setHistory([]);
   };
 
-  // Handle keyboard input
+  // Enhanced keyboard input handler
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Skip if inputs or textareas are focused
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
       const key = event.key;
       
-      // Handle numbers and operators
-      if (/^[0-9+\-*/().%]$/.test(key)) {
+      // Handle numbers, operators and functions
+      if (/^[0-9+\-*/().%^]$/.test(key)) {
         setInput(prev => prev + key);
+        const buttonEl = document.querySelector(`button[data-value="${key}"]`);
+        if (buttonEl) {
+          buttonEl.classList.add('active');
+          setTimeout(() => buttonEl.classList.remove('active'), 100);
+        }
       }
       
       // Handle equals and enter
       if (key === '=' || key === 'Enter') {
         event.preventDefault(); // Prevent form submission if in a form
-        document.querySelector('button[value="="]')?.dispatchEvent(
-          new MouseEvent('click', { bubbles: true })
-        );
+        const equalsButton = document.querySelector('button[value="="]');
+        if (equalsButton) {
+          equalsButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
       }
       
       // Handle backspace
       if (key === 'Backspace') {
         setInput(prev => prev.slice(0, -1));
+        const backspaceButton = document.querySelector('button[value="⌫"]');
+        if (backspaceButton) {
+          backspaceButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
       }
       
       // Handle escape (clear)
       if (key === 'Escape') {
         setInput('');
         setResult('');
+        const clearButton = document.querySelector('button[value="C"]');
+        if (clearButton) {
+          clearButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
+      }
+
+      // Toggle calculator modes with keyboard shortcuts
+      if (event.altKey && key === '1') {
+        setCalculatorMode('basic');
+      } else if (event.altKey && key === '2') {
+        setCalculatorMode('scientific');
+      } else if (event.altKey && key === '3') {
+        setCalculatorMode('converter');
+      }
+
+      // Toggle theme and sound with keyboard shortcuts
+      if (event.ctrlKey && key === 'd') {
+        event.preventDefault();
+        toggleTheme();
+      } else if (event.ctrlKey && key === 's') {
+        event.preventDefault();
+        toggleSound();
       }
     };
 
@@ -132,7 +196,10 @@ const Index = () => {
             Kawaii Math Lab
           </h1>
         </div>
-        <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+        <div className="flex items-center">
+          <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+          <SoundToggle isSoundEnabled={isSoundEnabled} toggleSound={toggleSound} />
+        </div>
       </header>
 
       {/* Main Content */}
@@ -178,6 +245,7 @@ const Index = () => {
                 addToHistory={addToHistory}
                 memory={memory}
                 setMemory={setMemory}
+                isSoundEnabled={isSoundEnabled}
               />
             </TabsContent>
             
@@ -190,6 +258,7 @@ const Index = () => {
                 addToHistory={addToHistory}
                 memory={memory}
                 setMemory={setMemory}
+                isSoundEnabled={isSoundEnabled}
               />
             </TabsContent>
             
@@ -214,12 +283,17 @@ const Index = () => {
         </motion.div>
       </main>
 
+      {/* Keyboard shortcuts info */}
+      <div className="mt-4 text-xs text-center text-muted-foreground">
+        <p>Keyboard shortcuts: Alt+1,2,3 (switch modes) | Ctrl+D (toggle theme) | Ctrl+S (toggle sound)</p>
+      </div>
+
       {/* Footer */}
       <motion.footer 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 0.6 }}
-        className="mt-12 text-center text-sm text-muted-foreground"
+        className="mt-6 text-center text-sm text-muted-foreground"
       >
         <p>Kawaii Math Lab • Made with ❤️</p>
         <p className="mt-1">Your cute math companion</p>

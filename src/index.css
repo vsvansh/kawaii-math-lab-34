@@ -149,6 +149,21 @@
     box-shadow: 0 4px 0 theme('colors.kawaii.peach.dark');
   }
 
+  button.active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 currentColor;
+  }
+
+  @keyframes button-press {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(2px); }
+    100% { transform: translateY(0); }
+  }
+
+  .animate-press {
+    animation: button-press 0.1s ease-in-out;
+  }
+
   .kawaii-tab {
     @apply px-4 py-2 rounded-t-lg font-medium text-center transition-all;
   }

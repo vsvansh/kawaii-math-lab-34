@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { playButtonSound } from '@/utils/soundUtils';
 
 type ButtonVariant = 
   | 'number' 
@@ -18,6 +19,7 @@ interface CalculatorButtonProps {
   colSpan?: number;
   rowSpan?: number;
   label?: React.ReactNode;
+  isSoundEnabled?: boolean;
 }
 
 const CalculatorButton: React.FC<CalculatorButtonProps> = ({
@@ -28,8 +30,10 @@ const CalculatorButton: React.FC<CalculatorButtonProps> = ({
   colSpan = 1,
   rowSpan = 1,
   label,
+  isSoundEnabled = false,
 }) => {
   const handleClick = () => {
+    playButtonSound(isSoundEnabled);
     onClick(value);
   };
 
@@ -56,6 +60,7 @@ const CalculatorButton: React.FC<CalculatorButtonProps> = ({
           'row-span-3': rowSpan === 3,
         }
       )}
+      data-value={value}
     >
       {/* Optional small decorative element for kawaii style */}
       {variant === 'equals' && (

@@ -1,20 +1,45 @@
-
 // Calculator utility functions
 
 // Parse and evaluate mathematical expressions
 export function evaluateExpression(expression: string): string {
   try {
+    // Handle factorial notation
+    let processedExpr = expression;
+    // Find and calculate factorial expressions
+    const factorialRegex = /(\d+)!/g;
+    processedExpr = processedExpr.replace(factorialRegex, (match, number) => {
+      return calculateFactorial(parseInt(number)).toString();
+    });
+    
     // Replace % with /100 for percentage calculations
-    const processedExpr = expression.replace(/(\d+)%/g, '($1/100)');
+    processedExpr = processedExpr.replace(/(\d+)%/g, '($1/100)');
     
     // Handle special constants
-    const withConstants = processedExpr
+    processedExpr = processedExpr
       .replace(/π/g, 'Math.PI')
       .replace(/e/g, 'Math.E');
+      
+    // Handle power notation
+    processedExpr = processedExpr.replace(/(\d+)\^(\d+)/g, 'Math.pow($1, $2)');
+    
+    // Handle square root
+    processedExpr = processedExpr.replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)');
+    
+    // Handle absolute value
+    processedExpr = processedExpr.replace(/abs\(([^)]+)\)/g, 'Math.abs($1)');
+    
+    // Handle trigonometric functions
+    processedExpr = processedExpr.replace(/sin\(([^)]+)\)/g, 'Math.sin($1)');
+    processedExpr = processedExpr.replace(/cos\(([^)]+)\)/g, 'Math.cos($1)');
+    processedExpr = processedExpr.replace(/tan\(([^)]+)\)/g, 'Math.tan($1)');
+    
+    // Handle log functions
+    processedExpr = processedExpr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
+    processedExpr = processedExpr.replace(/ln\(([^)]+)\)/g, 'Math.log($1)');
     
     // Safe evaluation using Function constructor
     // eslint-disable-next-line no-new-func
-    const result = Function('"use strict"; return (' + withConstants + ')')();
+    const result = Function('"use strict"; return (' + processedExpr + ')')();
     
     // Format the result
     if (typeof result === 'number') {
@@ -31,6 +56,7 @@ export function evaluateExpression(expression: string): string {
     return result.toString();
   } catch (error) {
     // Return error message for invalid expressions
+    console.error("Calculation error:", error);
     return "Error";
   }
 }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CalculatorButton from './CalculatorButton';
 import CalculatorDisplay from './CalculatorDisplay';
@@ -107,6 +106,7 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       }
     } catch (error) {
       setResult("Error");
+      console.error("Calculation error:", error);
     }
   };
 
@@ -176,10 +176,14 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendTrigFunction = (func: string) => {
+    // Just add the function name with opening parenthesis
+    // The closing parenthesis will be added by the user
     setInput(prevInput => prevInput + `${func}(`);
   };
 
   const appendLogFunction = (func: string) => {
+    // Just add the function name with opening parenthesis
+    // The closing parenthesis will be added by the user
     setInput(prevInput => prevInput + `${func}(`);
   };
 
@@ -252,7 +256,15 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   const appendAbsoluteValue = () => {
     setInput(prevInput => {
       if (!prevInput) return 'abs(';
-      return `abs(${prevInput})`;
+      
+      // Check if we need to wrap existing input or just start a new function
+      const needsWrap = !prevInput.endsWith('(');
+      
+      if (needsWrap) {
+        return `abs(${prevInput})`;
+      } else {
+        return `${prevInput}abs(`;
+      }
     });
   };
 

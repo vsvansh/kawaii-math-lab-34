@@ -46,34 +46,39 @@ export function evaluateExpression(expression: string): string {
     // Handle absolute value
     processedExpr = processedExpr.replace(/abs\(([^)]+)\)/g, 'Math.abs($1)');
     
-    // Handle trigonometric functions (convert to radians for standard Math functions)
-    // Sin
-    processedExpr = processedExpr.replace(/sin\(([^)]+)\)/g, (match, angle) => {
-      return `Math.sin(${angle} * Math.PI / 180)`;
+    // Improved handling of trigonometric functions (convert to radians for standard Math functions)
+    // Sin - improved regex pattern to handle nested expressions
+    processedExpr = processedExpr.replace(/sin\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, angle) => {
+      return `Math.sin((${angle}) * Math.PI / 180)`;
     });
-    // Cos
-    processedExpr = processedExpr.replace(/cos\(([^)]+)\)/g, (match, angle) => {
-      return `Math.cos(${angle} * Math.PI / 180)`;
+    
+    // Cos - improved regex pattern to handle nested expressions
+    processedExpr = processedExpr.replace(/cos\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, angle) => {
+      return `Math.cos((${angle}) * Math.PI / 180)`;
     });
-    // Tan
-    processedExpr = processedExpr.replace(/tan\(([^)]+)\)/g, (match, angle) => {
-      return `Math.tan(${angle} * Math.PI / 180)`;
+    
+    // Tan - improved regex pattern to handle nested expressions
+    processedExpr = processedExpr.replace(/tan\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, angle) => {
+      return `Math.tan((${angle}) * Math.PI / 180)`;
     });
     
     // Handle inverse trigonometric functions (convert from radians to degrees)
-    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]+)\)/g, (match, value) => {
+    // Improved patterns for inverse trig functions
+    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, value) => {
       return `(Math.asin(${value}) * 180 / Math.PI)`;
     });
-    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]+)\)/g, (match, value) => {
+    
+    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, value) => {
       return `(Math.acos(${value}) * 180 / Math.PI)`;
     });
-    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]+)\)/g, (match, value) => {
+    
+    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, value) => {
       return `(Math.atan(${value}) * 180 / Math.PI)`;
     });
     
-    // Handle log functions
-    processedExpr = processedExpr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
-    processedExpr = processedExpr.replace(/ln\(([^)]+)\)/g, 'Math.log($1)');
+    // Handle log functions with improved pattern matching
+    processedExpr = processedExpr.replace(/log\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, 'Math.log10($1)');
+    processedExpr = processedExpr.replace(/ln\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, 'Math.log($1)');
     
     // Ensure balanced parentheses for evaluation
     const openCount = (processedExpr.match(/\(/g) || []).length;
@@ -82,6 +87,9 @@ export function evaluateExpression(expression: string): string {
       // Add missing closing parentheses
       processedExpr += ')'.repeat(openCount - closeCount);
     }
+    
+    // For debugging
+    console.log("Processed expression:", processedExpr);
     
     // Safe evaluation using Function constructor
     // eslint-disable-next-line no-new-func

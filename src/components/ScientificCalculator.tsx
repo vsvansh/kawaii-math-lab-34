@@ -96,10 +96,20 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   const calculateResult = () => {
     try {
       if (input) {
-        const calculatedResult = evaluateExpression(input);
+        // Ensure all parentheses are properly closed before evaluation
+        let processedInput = input;
+        const openCount = (processedInput.match(/\(/g) || []).length;
+        const closeCount = (processedInput.match(/\)/g) || []).length;
+        
+        if (openCount > closeCount) {
+          // Add missing closing parentheses
+          processedInput += ')'.repeat(openCount - closeCount);
+        }
+        
+        const calculatedResult = evaluateExpression(processedInput);
         if (calculatedResult !== "Error") {
           setResult(calculatedResult);
-          addToHistory(input, calculatedResult);
+          addToHistory(processedInput, calculatedResult);
         } else {
           setResult("Error");
         }
@@ -142,7 +152,17 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
       try {
         // Only calculate preview if there's a complete expression
         if (isCompleteExpression(newInput)) {
-          const preview = evaluateExpression(newInput);
+          // Ensure all parentheses are properly closed before preview calculation
+          let processedInput = newInput;
+          const openCount = (processedInput.match(/\(/g) || []).length;
+          const closeCount = (processedInput.match(/\)/g) || []).length;
+          
+          if (openCount > closeCount) {
+            // Add temporary closing parentheses for preview
+            processedInput += ')'.repeat(openCount - closeCount);
+          }
+          
+          const preview = evaluateExpression(processedInput);
           if (preview !== "Error") {
             setResult(preview);
           }
@@ -176,14 +196,12 @@ const ScientificCalculator: React.FC<ScientificCalculatorProps> = ({
   };
 
   const appendTrigFunction = (func: string) => {
-    // Just add the function name with opening parenthesis
-    // The closing parenthesis will be added by the user
+    // Add the function name with opening parenthesis
     setInput(prevInput => prevInput + `${func}(`);
   };
 
   const appendLogFunction = (func: string) => {
-    // Just add the function name with opening parenthesis
-    // The closing parenthesis will be added by the user
+    // Add the function name with opening parenthesis
     setInput(prevInput => prevInput + `${func}(`);
   };
 

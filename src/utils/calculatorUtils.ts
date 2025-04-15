@@ -46,41 +46,41 @@ export function evaluateExpression(expression: string): string {
     // Handle absolute value
     processedExpr = processedExpr.replace(/abs\(([^)]+)\)/g, 'Math.abs($1)');
     
-    // Improved handling of trigonometric functions (convert to radians for standard Math functions)
-    // Sin - improved regex pattern to handle nested expressions
-    processedExpr = processedExpr.replace(/sin\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, angle) => {
+    // Better handling of trigonometric functions (convert to radians for standard Math functions)
+    // Sin - with much more robust pattern matching
+    processedExpr = processedExpr.replace(/sin\(([^)]+)\)/g, (match, angle) => {
       return `Math.sin((${angle}) * Math.PI / 180)`;
     });
     
-    // Cos - improved regex pattern to handle nested expressions
-    processedExpr = processedExpr.replace(/cos\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, angle) => {
+    // Cos - with much more robust pattern matching
+    processedExpr = processedExpr.replace(/cos\(([^)]+)\)/g, (match, angle) => {
       return `Math.cos((${angle}) * Math.PI / 180)`;
     });
     
-    // Tan - improved regex pattern to handle nested expressions
-    processedExpr = processedExpr.replace(/tan\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, angle) => {
+    // Tan - with much more robust pattern matching
+    processedExpr = processedExpr.replace(/tan\(([^)]+)\)/g, (match, angle) => {
       return `Math.tan((${angle}) * Math.PI / 180)`;
     });
     
     // Handle inverse trigonometric functions (convert from radians to degrees)
-    // Improved patterns for inverse trig functions
-    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, value) => {
+    // Fixed pattern for inverse trig functions
+    processedExpr = processedExpr.replace(/sin⁻¹\(([^)]+)\)/g, (match, value) => {
       return `(Math.asin(${value}) * 180 / Math.PI)`;
     });
     
-    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, value) => {
+    processedExpr = processedExpr.replace(/cos⁻¹\(([^)]+)\)/g, (match, value) => {
       return `(Math.acos(${value}) * 180 / Math.PI)`;
     });
     
-    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, (match, value) => {
+    processedExpr = processedExpr.replace(/tan⁻¹\(([^)]+)\)/g, (match, value) => {
       return `(Math.atan(${value}) * 180 / Math.PI)`;
     });
     
-    // Handle log functions with improved pattern matching
-    processedExpr = processedExpr.replace(/log\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, 'Math.log10($1)');
-    processedExpr = processedExpr.replace(/ln\(([^)]*\([^)]*\)[^)]*|[^)]+)\)/g, 'Math.log($1)');
+    // Handle log functions with better pattern matching
+    processedExpr = processedExpr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
+    processedExpr = processedExpr.replace(/ln\(([^)]+)\)/g, 'Math.log($1)');
     
-    // Ensure balanced parentheses for evaluation
+    // Handle dangling parentheses - ensure they're balanced
     const openCount = (processedExpr.match(/\(/g) || []).length;
     const closeCount = (processedExpr.match(/\)/g) || []).length;
     if (openCount > closeCount) {
@@ -91,28 +91,33 @@ export function evaluateExpression(expression: string): string {
     // For debugging
     console.log("Processed expression:", processedExpr);
     
-    // Safe evaluation using Function constructor
-    // eslint-disable-next-line no-new-func
-    const result = Function('"use strict"; return (' + processedExpr + ')')();
-    
-    // Format the result
-    if (typeof result === 'number') {
-      // Handle very small or very large numbers with scientific notation
-      if (Math.abs(result) < 0.000001 || Math.abs(result) > 10000000) {
-        return result.toExponential(6);
+    // Improved safe evaluation using Function constructor with try/catch
+    try {
+      // eslint-disable-next-line no-new-func
+      const result = Function('"use strict"; return (' + processedExpr + ')')();
+      
+      // Format the result
+      if (typeof result === 'number') {
+        // Handle very small or very large numbers with scientific notation
+        if (Math.abs(result) < 0.000001 || Math.abs(result) > 10000000) {
+          return result.toExponential(6);
+        }
+        
+        // Handle NaN and Infinity
+        if (isNaN(result)) return "Error";
+        if (!isFinite(result)) return "Infinity";
+        
+        // Regular number formatting with up to 10 decimal places
+        // Remove trailing zeros
+        const formatted = parseFloat(result.toFixed(10)).toString();
+        return formatted;
       }
       
-      // Handle NaN and Infinity
-      if (isNaN(result)) return "Error";
-      if (!isFinite(result)) return "Infinity";
-      
-      // Regular number formatting with up to 10 decimal places
-      // Remove trailing zeros
-      const formatted = parseFloat(result.toFixed(10)).toString();
-      return formatted;
+      return result.toString();
+    } catch (innerError) {
+      console.error("Expression evaluation error:", innerError, "for expression:", processedExpr);
+      return "Error";
     }
-    
-    return result.toString();
   } catch (error) {
     // Return error message for invalid expressions
     console.error("Calculation error:", error);
